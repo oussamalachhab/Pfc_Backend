@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client" // All prisma files will be generated in the prisma folder
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// it's a good practice to use enums for fixed values
+// in Prisma attributes naming, using camelCase is the standard
+// we use @@map to map the model name to the table name in the database
+// to avoid conflicts with reserved keywords in SQL, and to specify the table name
+
+enum RoleName {
+  admin
+  commercial
+}
+
+enum SubscriptionStatus {
+  actif
+  expirant
+  inactif
+}
+
+enum AlertType {
+  expirant_bientôt
+  expiré
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+}
+
+enum AuditEntity {
+  Subscriber
+  Subscription
+}
+
+model User {
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  email                String         @unique
+  passwordHash         String
+  roleId               Int
+  role                 Role           @relation(fields: [roleId], references: [id])
+  createdAt            DateTime       @default(now())
+  createdSubscribers   Subscriber[]   @relation("CreatedByUser")
+  updatedSubscribers   Subscriber[]   @relation("UpdatedByUser")
+  createdSubscriptions Subscription[] @relation("CreatedBySub")
+  updatedSubscriptions Subscription[] @relation("UpdatedBySub")
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id    Int      @id @default(autoincrement())
+  name  RoleName @unique
+  users User[]
+
+  @@map("roles")
+}
+
+model Subscriber {
+  id              Int            @id @default(autoincrement())
+  name            String
+  email           String         @unique
+  createdByUserId Int
+  updatedByUserId Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       User           @relation("CreatedByUser", fields: [createdByUserId], references: [id])
+  updatedBy       User           @relation("UpdatedByUser", fields: [updatedByUserId], references: [id])
+  subscriptions   Subscription[]
+
+  @@map("subscribers")
+}
+
+model Subscription {
+  id              Int                @id @default(autoincrement())
+  subscriberId    Int
+  startDate       DateTime
+  endDate         DateTime
+  status          SubscriptionStatus
+  createdByUserId Int
+  updatedByUserId Int
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  subscriber      Subscriber         @relation(fields: [subscriberId], references: [id])
+  createdBy       User               @relation("CreatedBySub", fields: [createdByUserId], references: [id])
+  updatedBy       User               @relation("UpdatedBySub", fields: [updatedByUserId], references: [id])
+  alerts          Alert[]
+
+  @@map("subscriptions")
+}
+
+model Alert {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int
+  type           AlertType
+  seen           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@map("alerts")
+}
+
+model AuditLog {
+  id                Int         @id @default(autoincrement())
+  action            AuditAction
+  entity            AuditEntity
+  entityId          Int
+  performedByUserId Int
+  timestamp         DateTime    @default(now())
+  performedBy       User        @relation(fields: [performedByUserId], references: [id])
+
+  @@map("audit_logs")
+}
