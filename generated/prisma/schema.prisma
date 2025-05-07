@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int            @id @default(autoincrement())
+  Name                 String
+  Email                String         @unique
+  PasswordHash         String
+  RoleId               Int
+  CreatedAt            DateTime
+  UpdatedAt            DateTime
+  role                 Role           @relation(fields: [RoleId], references: [id])
+  CreateSubsribers     Subscriber[]   @relation("CreatedSubscribers")
+  UpdateSubsribers     Subscriber[]   @relation("UpdatedSubscribers")
+  createdSubscriptions Subscription[] @relation("CreatedSubscriptions")
+  updatedSubscriptions Subscription[] @relation("UpdatedSubscriptions")
+  auditLogs            AuditLog[]
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  Name  String @unique
+  users User[]
+}
+
+model Subscriber {
+  id              Int            @id @default(autoincrement())
+  Name            String
+  Email           String         @unique
+  CreatedByUserId Int
+  UpdatedByUserId Int
+  CreatedAt       DateTime
+  UpdatedAt       DateTime
+  CreatedBy       User           @relation("CreatedSubscribers", fields: [CreatedByUserId], references: [id])
+  UpdatedBy       User           @relation("UpdatedSubscribers", fields: [UpdatedByUserId], references: [id])
+  subscriptions   Subscription[]
+}
+
+model Subscription {
+  id              Int        @id @default(autoincrement())
+  SubscripterId   Int
+  StartDate       DateTime
+  EndDate         DateTime
+  Status          String     @unique
+  CreatedByUserId Int
+  UpdatedByUserId Int
+  CreatedAt       DateTime
+  UpdatedAt       DateTime
+  CreatedBy       User       @relation("CreatedSubscriptions", fields: [CreatedByUserId], references: [id])
+  UpdatedBy       User       @relation("UpdatedSubscriptions", fields: [UpdatedByUserId], references: [id])
+  subscriber      Subscriber @relation(fields: [SubscripterId], references: [id])
+  alerts          Alert[]
+}
+
+model Alert {
+  id             Int          @id @default(autoincrement())
+  SubscriptionId Int
+  Type           String       @unique
+  Seen           Boolean
+  CreatedAt      DateTime
+  subscription   Subscription @relation(fields: [SubscriptionId], references: [id])
+}
+
+model AuditLog {
+  id                Int      @id @default(autoincrement())
+  action            String
+  entity            String
+  entityId          Int
+  performedByUserId Int
+  timestamp         DateTime
+  performedBy       User     @relation(fields: [performedByUserId], references: [id])
+}
