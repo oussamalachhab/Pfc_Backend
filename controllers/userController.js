@@ -83,4 +83,40 @@ exports.CreateUser = async (req, res) => {
         error: "Internal Server Error",
       });
     }
-  }
+}
+exports.UpdateUser = async (req, res) => {
+    try {
+        const userData = req.body;
+        const {
+            name,
+            email,
+            roleId
+        } = userData;
+        const user = await prisma.user.update({
+          where: { id: parseInt(req.params.id) },
+          data:userData,
+          include: { role: true }
+        });
+        
+        res.status(201).json({
+            success: true,
+            data: user,
+            message: "User Updated successfully",
+          });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.deleteUser = async (req, res) => {
+    try {
+        const user = await prisma.user.delete({
+          where: { id: parseInt(req.params.id) },
+        });
+        res.status(201).json({
+            data : user,
+            message: "User deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to delete record" });
+    }
+}
