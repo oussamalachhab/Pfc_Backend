@@ -11,6 +11,8 @@ router.get('/', function(req, res, next) {
 /* GET and POST  for create and get a user */ 
 router.post('/add', userController.CreateUser);
 router.get('/allUsers', userController.getAllUsers);
+router.put('/updateUser/:id', userController.UpdateUser);
+router.delete('/deleteUser/:id', userController.deleteUser);
 
 /* GET and POST  for create and get a role */ 
 router.get('/allRoles', roleController.getAllRoles);
