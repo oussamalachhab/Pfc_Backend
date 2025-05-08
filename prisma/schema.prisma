@@ -12,7 +12,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output = "./generated/client" // All prisma files will be generated in the prisma folder
 }
 
 datasource db {
